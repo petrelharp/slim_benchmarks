@@ -1,0 +1,70 @@
+initialize() {
+	initializeSLiMModelType("nonWF");
+	initializeSLiMOptions(dimensionality="xy");
+	defineConstant("K", 1e5);
+	defineConstant("NUMGENS", 100);
+	defineConstant("L", 1e8);
+	defineConstant("DENSITY", 2);  // carrying-capacity per unit square (roughly)
+	defineConstant("SIGMA", 1.0);  // sigma_D, the dispersal distance
+	defineConstant("A", 4);    // mean lifetime at stationarity
+	defineConstant("W", sqrt(K/DENSITY));  // width and height of the simulated area
+	
+	initializeMutationType("m1", 0.5, "f", 0.0);
+	initializeGenomicElementType("g1", m1, 1.0);
+	initializeGenomicElement(g1, 0, L-1);
+	initializeMutationRate(0.0);
+	initializeRecombinationRate(1e-8);
+	defineConstant("RHO", A/(2.5 * (1+A) * DENSITY)); // constant in spatial competition function
+    
+    // spatial competition
+    initializeInteractionType(1, "xy", reciprocal=T, maxDistance=SIGMA * 3);
+    i1.setInteractionFunction("n", 1.0/(2*PI*SIGMA^2), SIGMA);
+    
+    // mate choice
+    initializeInteractionType(2, "xy", reciprocal=T, maxDistance=SIGMA * 3);
+    i2.setInteractionFunction("n", 1.0/(2*PI*SIGMA^2), SIGMA);
+}
+
+reproduction() {
+    // choose our nearest neighbor as a mate, within the max distance
+    mate = i2.drawByStrength(individual, 1);
+    if (mate.size()) {
+        nOff = rpois(1, 2/A);
+        for (i in seqLen(nOff)) {
+            pos = individual.spatialPosition + rnorm(2, 0, 3 * SIGMA);
+            if (p1.pointInBounds(pos)) {
+            	offspring = subpop.addCrossed(individual, mate);
+          		offspring.setSpatialPosition(p1.pointReflected(pos));
+          	}
+        }
+    }
+    return;
+}
+
+1 early() {
+    sim.addSubpop("p1", asInteger(K));
+    p1.setSpatialBounds(c(0, 0, W, W));
+    // random initial positions
+    for (ind in p1.individuals) {
+        ind.setSpatialPosition(p1.pointUniform());
+    }
+    i1.evaluate();
+}
+
+early() {
+    i1.evaluate(p1);
+    inds = p1.individuals;
+    competition = i1.totalOfNeighborStrengths(inds);
+inds.tagF = competition;
+    inds.fitnessScaling = pmin(0.95, 1/(1 + RHO * competition));
+    sim.rescheduleScriptBlock(s99, generations=NUMGENS);
+}
+
+1: late() {
+	// to be ready for mate choice
+   i2.evaluate(p1);
+}
+
+s99 100 late() {
+	sim.simulationFinished();
+}
