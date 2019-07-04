@@ -1,14 +1,14 @@
 initialize() {
 	initializeSLiMModelType("nonWF");
-	initializeTreeSeq(simplificationInterval=50);
 	defineConstant("K", 1e5);
 	defineConstant("NUMGENS", 100);
 	defineConstant("L", 1e8);
+	defineConstant("MU", 1e-10); // mutation rate for selected mutations
 	
-	initializeMutationType("m1", 0.5, "f", 0.0);
+	initializeMutationType("m1", 0.5, "n", -1/K, 1/K);
 	initializeGenomicElementType("g1", m1, 1.0);
 	initializeGenomicElement(g1, 0, L-1);
-	initializeMutationRate(1e-8);
+	initializeMutationRate(MU);
 	initializeRecombinationRate(1e-8);
 }
 

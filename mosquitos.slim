@@ -1,6 +1,7 @@
 initialize() {
 	initializeSLiMModelType("nonWF");
 	initializeSLiMOptions(dimensionality="xy");
+	initializeTreeSeq(simplificationInterval=50);
 	defineConstant("K", 1e5);
 	defineConstant("NUMGENS", 100);
 	defineConstant("L", 1e8);
@@ -8,11 +9,13 @@ initialize() {
 	defineConstant("SIGMA", 1.0);  // sigma_D, the dispersal distance
 	defineConstant("A", 4);    // mean lifetime at stationarity
 	defineConstant("W", sqrt(K/DENSITY));  // width and height of the simulated area
+	defineConstant("MU", 1e-10); // mutation rate for selected mutations
+
 	
-	initializeMutationType("m1", 0.5, "f", 0.0);
+	initializeMutationType("m1", 0.5, "n", -1/K, 1/K);
 	initializeGenomicElementType("g1", m1, 1.0);
 	initializeGenomicElement(g1, 0, L-1);
-	initializeMutationRate(0.0);
+	initializeMutationRate(MU);
 	initializeRecombinationRate(1e-8);
 	defineConstant("RHO", A/(2.5 * (1+A) * DENSITY)); // constant in spatial competition function
     
@@ -45,7 +48,9 @@ reproduction() {
     sim.addSubpop("p1", asInteger(K));
     p1.setSpatialBounds(c(0, 0, W, W));
     // random initial positions
-    p1.individuals.setSpatialPosition(p1.pointUniform(p1.individualCount));
+    for (ind in p1.individuals) {
+        ind.setSpatialPosition(p1.pointUniform());
+    }
     i1.evaluate();
     sim.rescheduleScriptBlock(s99, generations=NUMGENS);
 }
@@ -54,6 +59,7 @@ early() {
     i1.evaluate(p1);
     inds = p1.individuals;
     competition = i1.totalOfNeighborStrengths(inds);
+inds.tagF = competition;
     inds.fitnessScaling = pmin(0.95, 1/(1 + RHO * competition));
 }
 
