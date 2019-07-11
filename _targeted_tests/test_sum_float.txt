@@ -1,0 +1,42 @@
+// execute with: eidos <path>/test_sum_float.txt
+
+y = 1.0:100000;	// modify the length of this vector to scale the test
+
+for (rep in 1:3) {
+	start = clock("mono");
+	for (i in 1:1000000) x = sum(y);
+	print(clock("mono") - start);
+}
+
+
+// BCH 7/5/2019: Timing with Clang 8.0 on macOS 10.14.5, Xcode 10.2.1, on a 4-core MacBook Pro 2016,
+// 2.9 GHz Intel Core i7, with hyperthreading (8 virtual cores)
+
+// with 10 floats: 0.323949 (1 thread via num_threads) vs. 1.95444 (8 threads)
+// with 100 floats: 0.461616 (1 thread via num_threads) vs. 1.99818 (8 threads)
+// with 1000 floats: 1.47665 (1 thread via num_threads) vs. 2.18027 (8 threads)
+// with 2000 floats: 2.56607 (1 thread via num_threads) vs. 2.5093 (8 threads)
+// with 3000 floats: 3.71539 (1 thread via num_threads) vs. 2.44101 (8 threads)
+// with 4000 floats: 4.84675 (1 thread via num_threads) vs. 2.56309 (8 threads)
+// with 5000 floats: 5.9972 (1 thread via num_threads) vs. 2.76164 (8 threads)
+// with 10000 floats: 11.5416 (1 thread via num_threads) vs. 3.63969 (8 threads)
+// with 100000 floats: 113.895 (1 thread via num_threads) vs. 17.8315 (8 threads)
+//
+// Tests of disabling the OpenMP parallel operation:
+// with 100 floats, with the OpenMP pragma commented out: 0.164486 (half the time of one-threaded MP)
+// with 100 floats, with the OpenMP pragma disabled by if(): 0.435853 (comparable time to one-threaded MP)
+//
+// Non-hyperthreading tests:
+// with 2000 floats, with 4 threads (with num_threads) instead of 8: 1.97485 (faster than with 8 threads)
+// with 100000 floats, with 4 threads (with num_threads) instead of 8: 40.6958 (much longer than 8 threads)
+
+// Timing protocol: always run three reps, always take the lowest rep's time
+// The first rep often produces quite a bad time, for some reason – often seconds slower!
+
+
+// BCH 7/6/2019: Timing with Clang 8.0 on macOS 10.14.5, Xcode 10.2.1, on a 6-core Mac mini 2018,
+// 3.2 GHz Intel Core i7, with hyperthreading (12 virtual cores)
+
+// with 100000 floats: 94.30 (1 thread via maxthreads) vs. 12.38 (12 threads) (with 6 threads, 18.22)
+//    (note the machine was busy doing other things at the same time, but I think the load was pretty constant)
+//    so, a 7.6x speedup with hyperthreading, 5.2x without hyperthreading, not bad...

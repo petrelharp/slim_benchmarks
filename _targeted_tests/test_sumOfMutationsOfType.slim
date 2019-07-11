@@ -1,0 +1,44 @@
+// execute with: slim <path>/test_sumOfMutationsOfType.slim
+
+initialize() {
+	setSeed(1);
+	initializeMutationRate(3e-7);
+	initializeMutationType("m1", 0.5, "f", 0.0);       // neutral
+	initializeMutationType("m2", 0.5, "n", 0.0, 0.2);  // QTLs
+	m2.convertToSubstitution = F;
+	initializeGenomicElementType("g1", m1, 1);
+	initializeGenomicElementType("g2", m1, 1);
+	initializeGenomicElement(g1, 0, 20000);
+	initializeGenomicElement(g2, 20001, 22000);
+	initializeGenomicElement(g1, 22001, 999999);
+	initializeRecombinationRate(1e-8);
+}
+fitness(m2) { return 1.0; }
+1 { sim.addSubpop("p1", 1000); }
+1: late() {
+	inds = sim.subpopulations.individuals;
+	phenotypes = inds.sumOfMutationsOfType(m2);
+	inds.fitnessScaling = 1.5 - (phenotypes - 10.0)^2 * 0.005;
+	
+	if (sim.generation == 2000)
+	{
+		rep_inds = inds[0:(1000 - 1)];	// modify the sample size to scale the test
+		for (rep in 1:3)
+		{
+			start = clock("mono");
+			for (i in 1:10000) phenotypes = rep_inds.sumOfMutationsOfType(m2);
+			print(clock("mono") - start);
+		}
+		sim.simulationFinished();
+	}
+}
+1000000 late() {
+}
+
+
+// BCH 7/5/2019: Timing with Clang 8.0 on macOS 10.14.5, Xcode 10.2.1, on a 4-core MacBook Pro 2016,
+// 2.9 GHz Intel Core i7, with hyperthreading (8 virtual cores)
+
+// with 10 individuals: 0.146903 (1 thread via num_threads) vs. 0.0510341 (8 threads)
+// with 100 individuals: 1.17168 (1 thread via num_threads) vs. 0.375427 (8 threads)
+// with 1000 individuals: 12.1257 (1 thread via num_threads) vs. 3.25744 (8 threads)

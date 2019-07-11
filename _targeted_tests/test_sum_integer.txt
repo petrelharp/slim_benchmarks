@@ -1,0 +1,19 @@
+// execute with: eidos <path>/test_sum_integer.txt
+
+y = 1:2000;	// modify the length of this vector to scale the test
+
+for (rep in 1:3) {
+	start = clock("mono");
+	for (i in 1:1000000) x = sum(y);
+	print(clock("mono") - start);
+}
+
+
+// BCH 7/5/2019: Timing with Clang 8.0 on macOS 10.14.5, Xcode 10.2.1, on a 4-core MacBook Pro 2016,
+// 2.9 GHz Intel Core i7, with hyperthreading (8 virtual cores)
+
+// with 10 integers: 0.327415 (1 thread via num_threads) vs. 1.89961 (8 threads)
+// with 100 integers: 0.424192 (1 thread via num_threads) vs. 1.95047 (8 threads)
+// with 1000 integers: 1.51558 (1 thread via num_threads) vs. 2.13396 (8 threads)
+// with 2000 integers: 2.55869 (1 thread via num_threads) vs. 2.29827 (8 threads)
+// with 10000 integers: 11.6245 (1 thread via num_threads) vs. 3.48794 (8 threads)
