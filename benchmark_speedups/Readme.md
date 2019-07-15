@@ -1,4 +1,4 @@
-Max site gain(speedup) vs core count graph for benchmarks from _targeted_tests/ 
+Max site gain(speedup) vs core count plot for benchmarks from _targeted_tests/ 
 
 ## Naming convention:
 ```<target site>_<model>_<size>.png```
